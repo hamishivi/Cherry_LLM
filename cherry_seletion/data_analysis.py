@@ -102,7 +102,7 @@ def main():
         raise Exception
 
     with open(args.data_path, "r") as f:
-        data = [json.load(l) for l in f]
+        data = [json.loads(l) for l in f]
 
     start_idx = args.start_idx
     end_idx = args.end_idx if args.end_idx != -1 else len(data)
