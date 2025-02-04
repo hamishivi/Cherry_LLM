@@ -89,9 +89,9 @@ def main():
     args = parse_args()
     print(args)
 
-    from transformers import LlamaTokenizer, LlamaForCausalLM
-    model = LlamaForCausalLM.from_pretrained(args.model_name_or_path, device_map="auto", cache_dir='../cache', output_hidden_states=True)
-    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path, cache_dir='../cache')
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, device_map="auto", cache_dir='../cache', output_hidden_states=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, cache_dir='../cache')
 
     model.eval()
 
@@ -114,28 +114,15 @@ def main():
     for i in tqdm(range(len(sampled_data))):
 
         data_i = sampled_data[i]
-        instruct_i = data_i['instruction']
-        output_i = data_i['output']
-
-        direct_answer_text = '### Response:' + output_i
-        if args.prompt == 'wiz':
-            whole_text = instruct_i+'\n\n### Response:'+output_i
-            input_i = data_i['input'] if 'input' in data_i.keys() else ''
-            if input_i != '':
-                whole_text = instruct_i+'\nInput:'+input_i+'\n\n### Response:'+output_i
-
-        elif args.prompt == 'alpaca':
-            input_i = data_i['input'] if 'input' in data_i.keys() else ''
-            if input_i == '':
-                temp_dict = {'instruction':instruct_i}
-                promt_to_use = PROMPT_DICT["prompt_no_input"].format_map(temp_dict)
-                whole_text = promt_to_use + output_i
-                instruct_i = promt_to_use
-            else:
-                temp_dict = {'instruction':instruct_i,'input':input_i}
-                promt_to_use = PROMPT_DICT["prompt_input"].format_map(temp_dict)
-                whole_text = promt_to_use + output_i
-                instruct_i = promt_to_use
+        messages_i = data_i['messages']
+        whole_text = tokenizer.apply_chat_template(messages_i, tokenize=False)
+        # if we have the system first, use the first two turns.
+        if messages_i[0]['role'] == 'system':
+            instruct_i = tokenizer.apply_chat_template(messages_i[:2], tokenize=False)
+            output_i = tokenizer.apply_chat_template(messages_i[2:], tokenize=False)
+        else:
+            instruct_i = tokenizer.apply_chat_template(messages_i[:1], tokenize=False)
+            output_i = tokenizer.apply_chat_template(messages_i[1:], tokenize=False)
 
         temp_data_i = {}
         if args.mod == 'pre':
