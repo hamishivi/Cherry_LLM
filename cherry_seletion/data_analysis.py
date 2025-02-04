@@ -93,6 +93,25 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, device_map="auto", cache_dir='../cache', output_hidden_states=True)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, cache_dir='../cache')
 
+    tokenizer.chat_template = (
+        "{% for message in messages %}"
+        "{% if message['role'] == 'system' %}"
+        "{{ '<|system|>\n' + message['content'] + '\n' }}"
+        "{% elif message['role'] == 'user' %}"
+        "{{ '<|user|>\n' + message['content'] + '\n' }}"
+        "{% elif message['role'] == 'assistant' %}"
+        "{% if not loop.last %}"
+        "{{ '<|assistant|>\n'  + message['content'] + eos_token + '\n' }}"
+        "{% else %}"
+        "{{ '<|assistant|>\n'  + message['content'] + eos_token }}"
+        "{% endif %}"
+        "{% endif %}"
+        "{% if loop.last and add_generation_prompt %}"
+        "{{ '<|assistant|>\n' }}"
+        "{% endif %}"
+        "{% endfor %}"
+    )
+
     model.eval()
 
     if args.save_path[-3:] != '.pt':
