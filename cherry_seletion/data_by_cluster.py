@@ -82,7 +82,7 @@ def main():
 
     pt_data = torch.load(args.pt_data_path, map_location=torch.device('cpu'))
     with open(args.json_data_path, "r") as f:
-        json_data = json.load(f)
+        json_data = [json.loads(l) for l in f]
 
     emb_list = []
     ppl_list = []
@@ -112,7 +112,8 @@ def main():
     new_data = get_json_sample(middle_confidence_samples)
     print('New data len \n',len(new_data))
     with open(args.json_save_path, "w") as fw:
-        json.dump(new_data, fw, indent=4)
+        for sample in new_data:
+            fw.write(json.dumps(sample) + '\n')
     pass
 
 
