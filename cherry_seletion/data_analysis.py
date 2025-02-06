@@ -143,6 +143,9 @@ def main():
             instruct_i = tokenizer.apply_chat_template(messages_i[:1], tokenize=False)
             output_i = tokenizer.apply_chat_template(messages_i[1:], tokenize=False)
 
+        # same for this.
+        direct_answer_text = output_i
+
         temp_data_i = {}
         if args.mod == 'pre':
             ppl_ins_alone, emb_ins_alone = get_perplexity_and_embedding_whole_text(tokenizer, model, instruct_i, args.max_length)
