@@ -37,7 +37,6 @@ def main():
     print(args)
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
-    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, device_map="auto", cache_dir='../cache', output_hidden_states=True)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, cache_dir='../cache')
 
     tokenizer.chat_template = (
@@ -153,7 +152,8 @@ def main():
     new_data = [json_data[idx] for idx in mean_rate_list_id_sample]
     print('New data len \n',len(new_data))
     with open(args.json_save_path, "w") as fw:
-        json.dump(new_data, fw, indent=4)
+        for data_i in new_data:
+            fw.write(json.dumps(data_i) + "\n")
 
 
 if __name__ == '__main__':
