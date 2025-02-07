@@ -36,12 +36,32 @@ def main():
     args = parse_args()
     print(args)
 
-    from transformers import LlamaTokenizer, LlamaForCausalLM
-    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path)
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, device_map="auto", cache_dir='../cache', output_hidden_states=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, cache_dir='../cache')
+
+    tokenizer.chat_template = (
+        "{% for message in messages %}"
+        "{% if message['role'] == 'system' %}"
+        "{{ '<|system|>\n' + message['content'] + '\n' }}"
+        "{% elif message['role'] == 'user' %}"
+        "{{ '<|user|>\n' + message['content'] + '\n' }}"
+        "{% elif message['role'] == 'assistant' %}"
+        "{% if not loop.last %}"
+        "{{ '<|assistant|>\n'  + message['content'] + eos_token + '\n' }}"
+        "{% else %}"
+        "{{ '<|assistant|>\n'  + message['content'] + eos_token }}"
+        "{% endif %}"
+        "{% endif %}"
+        "{% if loop.last and add_generation_prompt %}"
+        "{{ '<|assistant|>\n' }}"
+        "{% endif %}"
+        "{% endfor %}"
+    )
 
     pt_data = torch.load(args.pt_data_path, map_location=torch.device('cpu'))
     with open(args.json_data_path, "r") as f:
-        json_data = json.load(f)
+        json_data = [json.loads(l) for l in f]
 
     mean_rate_list = []
     mean_list_1 = []
@@ -53,24 +73,33 @@ def main():
         loss_2_list = pt_data_i['token_loss'][2]
 
         json_data_i = json_data[i]
-        instruct_i = json_data_i['instruction']
-        output_i = json_data_i['output']
+        messages_i = json_data_i['messages']
+        whole_text = tokenizer.apply_chat_template(messages_i, tokenize=False)
+        # if we have the system first, use the first two turns.
+        if messages_i[0]['role'] == 'system':
+            instruct_i = tokenizer.apply_chat_template(messages_i[:2], tokenize=False)
+            output_i = tokenizer.apply_chat_template(messages_i[2:], tokenize=False)
+        else:
+            instruct_i = tokenizer.apply_chat_template(messages_i[:1], tokenize=False)
+            output_i = tokenizer.apply_chat_template(messages_i[1:], tokenize=False)
 
-        direct_answer_text = '### Response:' + output_i
-        if args.prompt == 'wiz':
-            whole_text = instruct_i+'\n\n### Response:'+output_i
-        elif args.prompt == 'alpaca':
-            input_i = json_data_i['input']
-            if input_i == '':
-                temp_dict = {'instruction':instruct_i}
-                promt_to_use = PROMPT_DICT["prompt_no_input"].format_map(temp_dict)
-                whole_text = promt_to_use + output_i
-                instruct_i = promt_to_use
-            else:
-                temp_dict = {'instruction':instruct_i,'input':input_i}
-                promt_to_use = PROMPT_DICT["prompt_input"].format_map(temp_dict)
-                whole_text = promt_to_use + output_i
-                instruct_i = promt_to_use
+        direct_answer_text = output_i
+
+        # direct_answer_text = '### Response:' + output_i
+        # if args.prompt == 'wiz':
+        #     whole_text = instruct_i+'\n\n### Response:'+output_i
+        # elif args.prompt == 'alpaca':
+        #     input_i = json_data_i['input']
+        #     if input_i == '':
+        #         temp_dict = {'instruction':instruct_i}
+        #         promt_to_use = PROMPT_DICT["prompt_no_input"].format_map(temp_dict)
+        #         whole_text = promt_to_use + output_i
+        #         instruct_i = promt_to_use
+        #     else:
+        #         temp_dict = {'instruction':instruct_i,'input':input_i}
+        #         promt_to_use = PROMPT_DICT["prompt_input"].format_map(temp_dict)
+        #         whole_text = promt_to_use + output_i
+        #         instruct_i = promt_to_use
 
         # Tokenize the input text
         instruct_i_input_ids = tokenizer.encode(instruct_i, return_tensors="pt", truncation=True, max_length=args.max_length).to('cpu')
