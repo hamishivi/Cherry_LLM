@@ -141,19 +141,27 @@ def main():
         else:
             continue
 
-    print('Do Rate')
-    mean_rate_list = sorted(mean_rate_list)
-    if args.sample_number == 0:
-        args.sample_number = int(len(mean_rate_list)*args.sample_rate)
-    mean_rate_list_id = [i for i in range(len(mean_rate_list))][-args.sample_number:]
-    mean_rate_list_id_sample = [mean_rate_list[id][1] for id in mean_rate_list_id]
-    mean_rate_list_id_sample = sorted(mean_rate_list_id_sample)
 
-    new_data = [json_data[idx] for idx in mean_rate_list_id_sample]
-    print('New data len \n',len(new_data))
-    with open(args.json_save_path, "w") as fw:
-        for data_i in new_data:
+    # save mean list
+    with open(args.json_save_path + '_mean_list.jsonl', "w") as fw:
+        for data_i in mean_rate_list:
             fw.write(json.dumps(data_i) + "\n")
+
+    # then later we can merge etc.
+
+    # print('Do Rate')
+    # mean_rate_list = sorted(mean_rate_list)
+    # if args.sample_number == 0:
+    #     args.sample_number = int(len(mean_rate_list)*args.sample_rate)
+    # mean_rate_list_id = [i for i in range(len(mean_rate_list))][-args.sample_number:]
+    # mean_rate_list_id_sample = [mean_rate_list[id][1] for id in mean_rate_list_id]
+    # mean_rate_list_id_sample = sorted(mean_rate_list_id_sample)
+
+    # new_data = [json_data[idx] for idx in mean_rate_list_id_sample]
+    # print('New data len \n',len(new_data))
+    # with open(args.json_save_path, "w") as fw:
+    #     for data_i in new_data:
+    #         fw.write(json.dumps(data_i) + "\n")
 
 
 if __name__ == '__main__':
