@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--mean_list_paths", type=str, nargs='+', required=True)
 parser.add_argument("--data_json_paths", type=str, nargs='+', required=True)
 parser.add_argument("--save_path", type=str, required=True)
-parser.add_argument("--sample_num", type=int, default=326000)
+parser.add_argument("--sample_number", type=int, default=326000)
 args = parser.parse_args()
 
 # step 1, load all the mean list
