@@ -13,11 +13,12 @@ args = parser.parse_args()
 # assuming data and mean list in same order, seems reasonable.
 mean_list = []
 ongoing_id = 0
-for mean_list_path in args.mean_list_paths:
+file_sizes = 200000
+for i, mean_list_path in enumerate(args.mean_list_paths):
     with open(mean_list_path, "r") as f:
         for l in f:
-            mean_list.append([json.loads(l)[0], ongoing_id])
-            ongoing_id += 1
+            score, idx = json.loads(l)
+            mean_list.append([score, idx + i * file_sizes])
     
     
 print('mean_list len:', len(mean_list), ". Now Sorting")
